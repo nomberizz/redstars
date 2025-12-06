@@ -1,10 +1,29 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing 웹캠 아트</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.js"></script>
+    
     <script src="sketch.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #222; /* 배경색 */
+        }
+        canvas {
+            display: block;
+            border: 1px solid #555; /* 캔버스 경계 표시 */
+        }
+    </style>
 </head>
 <body>
-    <button id="start-button" onclick="startCamera()">화면 클릭 후 시작</button> 
 </body>
 </html>
