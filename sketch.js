@@ -1,19 +1,19 @@
 // --- 전역 변수 설정 ---
-let cam;              // 웹캠 객체
-let targetColor;      // 추적할 색상 (빨간색)
-let threshold = 170;    // 색상 유사도 임계값
-let checkCellSize = 20; // 색상 검출 격자 크기
-let textStep = 10;        // 텍스트 출력 간격
-let mosaicText = "*";   // 모자이크에 사용할 텍스트
+let cam;              
+let targetColor;      
+let threshold = 170;    
+let checkCellSize = 20; // ⭐ 초기 값 유지
+let textStep = 10;        
+let mosaicText = "*";   
 
 // --- 잔상 효과를 위한 변수 ---
-let presenceBuffer; // 각 격자의 "생명력"을 저장하는 2차원 배열
-let numCols;        // 격자 열 수
-let numRows;        // 격자 행 수
+let presenceBuffer; 
+let numCols;        
+let numRows;        
 
-let maxPresence = 255.0; // 최대 생명력 값
-let growRate = 60.0;    // 나타나는 속도
-let fadeRate = 40.0;    // 사라지는 속도
+let maxPresence = 255.0; 
+let growRate = 60.0;    
+let fadeRate = 40.0;    
 
 const CAM_WIDTH = 640;
 const CAM_HEIGHT = 480;
@@ -22,28 +22,26 @@ const CAM_HEIGHT = 480;
 // 1. 초기 설정 (setup)
 // ----------------------------------------------------
 function setup() {
-  createCanvas(CAM_WIDTH, CAM_HEIGHT); // 캔버스 크기 설정
-  frameRate(15); // 프레임 속도 설정
+  createCanvas(CAM_WIDTH, CAM_HEIGHT); 
+  frameRate(15); // ⭐ 초기 값 유지
 
-  targetColor = color(255, 0, 0); // 추적할 색상 (빨간색)
+  targetColor = color(255, 0, 0); 
   
-  // 격자 크기 계산
   numCols = ceil(width / checkCellSize);
   numRows = ceil(height / checkCellSize);
   
-  // 잔상 버퍼 초기화
   presenceBuffer = new Array(numCols);
   for (let i = 0; i < numCols; i++) {
     presenceBuffer[i] = new Array(numRows).fill(0);
   }
 
-  // 웹캠 설정 (p5.js 방식 - 해상도 명시적 요청과 문법 수정)
-  // SyntaxError를 방지하기 위해 쉼표(,)를 정확히 확인합니다.
+  // 웹캠 설정: 해상도와 비율(4:3) 강제 요청 (왜곡 방지)
   cam = createCapture({
     video: {
       width: { exact: CAM_WIDTH }, 
-      height: { exact: CAM_HEIGHT }
-    }, // <--- 이 콤마가 필수입니다! 
+      height: { exact: CAM_HEIGHT },
+      aspectRatio: { min: CAM_WIDTH / CAM_HEIGHT, max: CAM_WIDTH / CAM_HEIGHT } 
+    }, 
     audio: false 
   });
   
@@ -51,7 +49,7 @@ function setup() {
   cam.hide(); 
   
   textAlign(CENTER, CENTER);
-  textSize(25);
+  textSize(25); 
 }
 
 // ----------------------------------------------------
@@ -59,12 +57,9 @@ function setup() {
 // ----------------------------------------------------
 function draw() {
   
-  // 매 프레임 배경을 지웁니다.
   background(0); 
 
-  // 웹캠 로딩 상태 확인
   if (cam && cam.loadedmetadata) {
-    // 픽셀 데이터 로드
     cam.loadPixels();
     
     // --------------------------------------------------
@@ -78,7 +73,7 @@ function draw() {
     }
 
     // --------------------------------------------------
-    // Phase 2: 색상 검출 및 생명력 증가
+    // Phase 2: 색상 검출 및 생명력 증가 (cam.pixels 직접 접근으로 개선)
     // --------------------------------------------------
     for (let x = 0; x < width; x += checkCellSize) {
       for (let y = 0; y < height; y += checkCellSize) {
@@ -86,9 +81,15 @@ function draw() {
         let i = floor(x / checkCellSize); 
         let j = floor(y / checkCellSize); 
         
-        let pixelColor = cam.get(x + checkCellSize/2, y + checkCellSize/2);
+        // ⭐ 성능 개선: cam.pixels 배열 인덱스를 계산하여 R, G, B 값을 직접 읽음
+        let pixelIndex = 4 * ( (y + checkCellSize/2) * width + (x + checkCellSize/2) );
         
-        let d = dist(red(pixelColor), green(pixelColor), blue(pixelColor), 
+        let r_pixel = cam.pixels[pixelIndex];
+        let g_pixel = cam.pixels[pixelIndex + 1];
+        let b_pixel = cam.pixels[pixelIndex + 2];
+        
+        // cam.get() 대신 직접 읽은 값으로 거리 계산
+        let d = dist(r_pixel, g_pixel, b_pixel, 
                      red(targetColor), green(targetColor), blue(targetColor));
         
         if (d < threshold) {
@@ -141,13 +142,11 @@ function draw() {
       }
     }
   } else {
-      // cam 객체가 정의되었지만 로드가 안 된 경우 (로딩 중)
       if (cam) {
-          fill(255, 255, 0); // 노란색
-          text("웹캠 로드 중... 브라우저 권한 및 시스템 설정을 확인하세요.", width / 2, height / 2);
+          fill(255, 255, 0); 
+          text("웹캠 로드 중... 권한을 확인하세요.", width / 2, height / 2);
       } else {
-          // cam 객체 생성 자체가 실패한 경우 (일반적이지 않은 심각한 에러)
-          fill(255, 0, 0); // 빨간색
+          fill(255, 0, 0); 
           text("오류: 웹캠 객체 생성 실패 - 콘솔 확인 필요", width / 2, height / 2);
       }
   }
