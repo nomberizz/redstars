@@ -37,18 +37,18 @@ function setup() {
     presenceBuffer[i] = new Array(numRows).fill(0);
   }
 
-  // 웹캠 설정 (p5.js 방식 - 해상도 명시적 요청 추가)
-  // 웹캠 연결 문제를 줄이기 위해 정확한 해상도를 요청합니다.
+  // 웹캠 설정 (p5.js 방식 - 해상도 명시적 요청과 문법 수정)
+  // SyntaxError를 방지하기 위해 쉼표(,)를 정확히 확인합니다.
   cam = createCapture({
     video: {
       width: { exact: CAM_WIDTH }, 
       height: { exact: CAM_HEIGHT }
-    },
-    audio: false // 오디오는 필요 없으므로 false 설정
+    }, // <--- 이 콤마가 필수입니다! 
+    audio: false 
   });
   
   cam.size(CAM_WIDTH, CAM_HEIGHT);
-  cam.hide(); // 웹캠 영상을 HTML 요소로 표시하지 않고 데이터만 사용
+  cam.hide(); 
   
   textAlign(CENTER, CENTER);
   textSize(25);
@@ -58,8 +58,12 @@ function setup() {
 // 2. 그리기 루프 (draw)
 // ----------------------------------------------------
 function draw() {
-  // cam.loadedmetadata는 웹캠이 성공적으로 로드되었는지 확인합니다.
-  if (cam.loadedmetadata) {
+  
+  // 매 프레임 배경을 지웁니다.
+  background(0); 
+
+  // 웹캠 로딩 상태 확인
+  if (cam && cam.loadedmetadata) {
     // 픽셀 데이터 로드
     cam.loadPixels();
     
@@ -82,14 +86,11 @@ function draw() {
         let i = floor(x / checkCellSize); 
         let j = floor(y / checkCellSize); 
         
-        // 격자 중앙의 픽셀 색상 가져오기
         let pixelColor = cam.get(x + checkCellSize/2, y + checkCellSize/2);
         
-        // 색상 거리 계산
         let d = dist(red(pixelColor), green(pixelColor), blue(pixelColor), 
                      red(targetColor), green(targetColor), blue(targetColor));
         
-        // 임계값보다 작으면 생명력 증가
         if (d < threshold) {
           presenceBuffer[i][j] += growRate;
           presenceBuffer[i][j] = min(maxPresence, presenceBuffer[i][j]);
@@ -101,12 +102,10 @@ function draw() {
     // 2. 웹캠 이미지 출력 (흑백 필터와 좌우 반전 적용)
     // --------------------------------------------------
     
-    // 좌우 반전을 위한 변환
     push();
     translate(width, 0);
     scale(-1, 1);
     
-    // 반전된 컬러 영상을 캔버스에 그리고 흑백 필터 적용
     image(cam, 0, 0, width, height); 
     filter(GRAY); 
               
@@ -129,14 +128,11 @@ function draw() {
         
         if (currentPresence > 0) {
           
-          // 빨간색에 잔상 강도를 투명도로 적용
           fill(255, 0, 0, currentPresence);
           
-          // 좌우 반전된 위치에 맞게 텍스트 출력 위치 계산
           let drawX = width - x; 
           let drawY = y;
           
-          // 떨림 효과
           let jitterX = random(-textStep * 0.5, textStep * 0.5);
           let jitterY = random(-textStep * 0.5, textStep * 0.5);
 
@@ -145,9 +141,14 @@ function draw() {
       }
     }
   } else {
-      // 웹캠 로딩 중 대기 메시지
-      background(0);
-      fill(255);
-      text("웹캠을 로드 중입니다. 카메라 권한을 확인하세요.", width / 2, height / 2);
+      // cam 객체가 정의되었지만 로드가 안 된 경우 (로딩 중)
+      if (cam) {
+          fill(255, 255, 0); // 노란색
+          text("웹캠 로드 중... 브라우저 권한 및 시스템 설정을 확인하세요.", width / 2, height / 2);
+      } else {
+          // cam 객체 생성 자체가 실패한 경우 (일반적이지 않은 심각한 에러)
+          fill(255, 0, 0); // 빨간색
+          text("오류: 웹캠 객체 생성 실패 - 콘솔 확인 필요", width / 2, height / 2);
+      }
   }
 }
