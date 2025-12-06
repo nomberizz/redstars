@@ -1,7 +1,7 @@
 // --- 전역 변수 설정 ---
 let cam;              
 let targetColor;      
-let threshold = 200;    
+let threshold = 170;    
 let checkCellSize = 20; // ⭐ 초기 값 유지
 let textStep = 10;        
 let mosaicText = "*";   
