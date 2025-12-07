@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processing 웹캠 아트</title>
+    <title>Twinkle Twinkle</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.js"></script>
     
@@ -16,11 +16,21 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #222; /* 배경색 */
+            background-color: #222; 
         }
         canvas {
             display: block;
-            border: 1px solid #555; /* 캔버스 경계 표시 */
+            border: 1px solid #555;
+            
+            /* 캔버스가 뷰포트 크기를 초과하지 않도록 제한 */
+            max-width: 100vw;
+            max-height: 100vh;
+            
+            /* ⭐핵심: 4:3 비율(640/480)을 강제 고정하여 왜곡과 잘림을 방지 */
+            aspect-ratio: 4 / 3; 
+            
+            width: auto; 
+            height: auto;
         }
     </style>
 </head>
