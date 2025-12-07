@@ -1,16 +1,15 @@
 // --- 전역 변수 설정 ---
 let cam;              
 let targetColor;      
-// ⭐ 사용자 설정 유지: threshold = 173
 let threshold = 173;    
-// ⭐ 사용자 설정 유지: checkCellSize = 20
-let checkCellSize = 20; 
+let checkCellSize = 40; 
 let textStep = 10;        
 let mosaicText = "*";   
 
 // ⭐ 카메라 전환 변수 추가
 let isFrontCamera = true; // 현재 카메라 상태 (초기는 전면)
-let cameraButton;         // 버튼 객체
+let cameraButton;         
+let flipCamera = true;    // ⭐ 좌우 반전 여부 (초기는 전면이므로 true)
 
 // --- 잔상 효과를 위한 변수 ---
 let presenceBuffer; 
@@ -20,27 +19,25 @@ let maxPresence = 255.0;
 let growRate = 60.0;    
 let fadeRate = 40.0;    
 
-// 시각적 품질: 해상도를 640x480으로 유지
 const CAM_WIDTH = 640;
-const CAM_HEIGHT = 480; 
+const CAM_HEIGHT = 480;
 
 // ----------------------------------------------------
 // ⭐ 카메라 초기화 및 요청 함수
 // ----------------------------------------------------
 function initializeCamera() {
-    // 이전 cam 객체가 있다면 멈추고 제거
     if (cam) {
         cam.stop();
     }
     
-    // 현재 상태에 따라 facingMode를 'user' (전면) 또는 'environment' (후면)으로 설정
     let mode = isFrontCamera ? "user" : "environment";
+    
+    // ⭐⭐ 반전 여부 업데이트
+    flipCamera = isFrontCamera; 
     
     cam = createCapture({
         video: {
-            // 카메라 모드 요청
             facingMode: { exact: mode }, 
-            
             width: { exact: CAM_WIDTH }, 
             height: { exact: CAM_HEIGHT },
             aspectRatio: { min: CAM_WIDTH / CAM_HEIGHT, max: CAM_WIDTH / CAM_HEIGHT } 
@@ -55,7 +52,7 @@ function initializeCamera() {
 // ⭐ 버튼 클릭 시 호출되는 전환 함수
 function switchCamera() {
     isFrontCamera = !isFrontCamera; // 상태 반전
-    initializeCamera(); // 카메라 재시작
+    initializeCamera(); 
 }
 
 // ----------------------------------------------------
@@ -63,11 +60,10 @@ function switchCamera() {
 // ----------------------------------------------------
 function setup() {
   createCanvas(CAM_WIDTH, CAM_HEIGHT); 
-  frameRate(10); // 성능 최적화 유지
+  frameRate(10); 
 
   targetColor = color(255, 0, 0); 
   
-  // checkCellSize(20) 기준으로 격자 계산
   numCols = ceil(width / checkCellSize);
   numRows = ceil(height / checkCellSize);
   
@@ -76,10 +72,8 @@ function setup() {
     presenceBuffer[i] = new Array(numRows).fill(0);
   }
 
-  // ⭐ 카메라 초기화 호출
   initializeCamera(); 
   
-  // 버튼 요소 선택 및 이벤트 연결
   cameraButton = select('#cameraSwitchButton');
   cameraButton.mousePressed(switchCamera); 
   
@@ -97,9 +91,7 @@ function draw() {
   if (cam && cam.loadedmetadata) {
     cam.loadPixels();
     
-    // --------------------------------------------------
-    // Phase 1: 잔상 버퍼 업데이트 (감쇠)
-    // --------------------------------------------------
+    // --- Phase 1: 잔상 버퍼 업데이트 (감쇠) ---
     for (let i = 0; i < numCols; i++) {
       for (let j = 0; j < numRows; j++) {
         presenceBuffer[i][j] -= fadeRate; 
@@ -107,16 +99,13 @@ function draw() {
       }
     }
 
-    // --------------------------------------------------
-    // Phase 2: 색상 검출 및 생명력 증가 (checkCellSize=20, cam.pixels 접근)
-    // --------------------------------------------------
+    // --- Phase 2: 색상 검출 및 생명력 증가 ---
     for (let x = 0; x < width; x += checkCellSize) {
       for (let y = 0; y < height; y += checkCellSize) {
         
         let i = floor(x / checkCellSize); 
         let j = floor(y / checkCellSize); 
         
-        // cam.pixels 배열 인덱스를 계산하여 R, G, B 값을 직접 읽음 (성능 개선)
         let pixelIndex = 4 * ( (y + checkCellSize/2) * width + (x + checkCellSize/2) );
         
         let r_pixel = cam.pixels[pixelIndex];
@@ -126,7 +115,7 @@ function draw() {
         let d = dist(r_pixel, g_pixel, b_pixel, 
                      red(targetColor), green(targetColor), blue(targetColor));
         
-        if (d < threshold) { // threshold=173 적용
+        if (d < threshold) { 
           presenceBuffer[i][j] += growRate;
           presenceBuffer[i][j] = min(maxPresence, presenceBuffer[i][j]);
         }
@@ -134,21 +123,28 @@ function draw() {
     }
 
     // --------------------------------------------------
-    // 2. 웹캠 이미지 출력 (흑백 필터와 좌우 반전 적용)
+    // 2. 웹캠 이미지 출력 (반전 로직 적용)
     // --------------------------------------------------
     
     push();
-    translate(width, 0);
-    scale(-1, 1);
+    
+    // ⭐⭐⭐ 핵심 수정: flipCamera 상태에 따라 좌우 반전을 적용
+    if (flipCamera) {
+      translate(width, 0);
+      scale(-1, 1); 
+    }
     
     image(cam, 0, 0, width, height); 
     filter(GRAY); 
               
     pop();
-
+    
     // --------------------------------------------------
-    // Phase 3: 잔상 버퍼 값에 비례하여 텍스트 그리기 
+    // Phase 3: 잔상 버퍼 값에 비례하여 텍스트 그리기
     // --------------------------------------------------
+    // 참고: 텍스트는 좌우 반전된 상태에서 그려져야 하므로, 
+    // cam.pixels를 이용한 추적 위치(x)를 반전된 좌표(width - x)로 변환하는 로직은 유지합니다.
+    
     noStroke();
     
     for (let x = 0; x < width; x += textStep) {
@@ -165,7 +161,8 @@ function draw() {
           
           fill(255, 0, 0, currentPresence);
           
-          let drawX = width - x; 
+          // 텍스트 위치도 반전 여부에 따라 조정
+          let drawX = flipCamera ? width - x : x; 
           let drawY = y;
           
           let jitterX = random(-textStep * 0.5, textStep * 0.5);
