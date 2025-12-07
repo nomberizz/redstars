@@ -13,6 +13,7 @@
         body {
             margin: 0;
             display: flex;
+            flex-direction: column; /* 버튼을 캔버스 아래에 배치하기 위해 컬럼으로 변경 */
             justify-content: center;
             align-items: center;
             min-height: 100vh;
@@ -21,19 +22,28 @@
         canvas {
             display: block;
             border: 1px solid #555;
-            
-            /* 캔버스가 뷰포트 크기를 초과하지 않도록 제한 */
             max-width: 100vw;
             max-height: 100vh;
-            
-            /* ⭐핵심: 4:3 비율(640/480)을 강제 고정하여 왜곡과 잘림을 방지 */
             aspect-ratio: 4 / 3; 
-            
             width: auto; 
             height: auto;
+        }
+        /* 버튼 스타일 추가 */
+        #cameraSwitchButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
+    <button id="cameraSwitchButton">
+        카메라 전환
+    </button>
 </body>
 </html>
