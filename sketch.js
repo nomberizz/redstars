@@ -28,7 +28,7 @@ function setup() {
   frameRate(10); // 성능 최적화
 
   // targetColor를 순수한 빨강으로 유지
-  targetColor = color(255, 0, 0); 
+  targetColor = color(230, 30, 30); 
   
   // checkCellSize(40) 기준으로 격자 재계산
   numCols = ceil(width / checkCellSize);
